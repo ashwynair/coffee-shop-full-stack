@@ -12,21 +12,28 @@ setup_db(app)
 CORS(app)
 
 '''
-@TODO uncomment the following line to initialize the datbase
+@TODO uncomment the following line to initialize the database
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
+
+
 # db_drop_and_create_all()
 
-## ROUTES
-'''
-@TODO implement endpoint
-    GET /drinks
-        it should be a public endpoint
-        it should contain only the drink.short() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
-        or appropriate status code indicating reason for failure
-'''
+# ROUTES
+
+@app.route('/drinks', methods=['GET'])
+def get_drinks():
+    """
+    Public endpoint. Contains only the drink.short() data representation
+    :return: status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
+    or appropriate status code indicating reason for failure
+    """
+    drinks = list(map(Drink.format, Drink.query.all()))
+    return jsonify({
+        "success": True,
+        "drinks": drinks
+    })
 
 
 '''
@@ -38,7 +45,6 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
-
 '''
 @TODO implement endpoint
     POST /drinks
@@ -48,7 +54,6 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
-
 
 '''
 @TODO implement endpoint
@@ -62,7 +67,6 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
-
 '''
 @TODO implement endpoint
     DELETE /drinks/<id>
@@ -74,18 +78,20 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
-
 ## Error Handling
 '''
 Example error handling for unprocessable entity
 '''
+
+
 @app.errorhandler(422)
 def unprocessable(error):
     return jsonify({
-                    "success": False, 
-                    "error": 422,
-                    "message": "unprocessable"
-                    }), 422
+        "success": False,
+        "error": 422,
+        "message": "unprocessable"
+    }), 422
+
 
 '''
 @TODO implement error handlers using the @app.errorhandler(error) decorator
@@ -102,7 +108,6 @@ def unprocessable(error):
 @TODO implement error handler for 404
     error handler should conform to general task above 
 '''
-
 
 '''
 @TODO implement error handler for AuthError
