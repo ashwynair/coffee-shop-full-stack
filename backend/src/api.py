@@ -26,10 +26,10 @@ CORS(app)
 def get_drinks():
     """
     Public endpoint. Contains only the drink.short() data representation
-    :return: status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
+    :return: Status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
     or appropriate status code indicating reason for failure
     """
-    drinks = list(map(Drink.format, Drink.query.all()))
+    drinks = list(map(Drink.short, Drink.query.all()))
     return jsonify({
         "success": True,
         "drinks": drinks
