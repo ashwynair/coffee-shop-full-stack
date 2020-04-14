@@ -17,6 +17,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
 
+
 # db_drop_and_create_all()
 
 
@@ -86,6 +87,7 @@ def add_drinks():
             }
             return jsonify(result)
 
+
 '''
 @TODO implement endpoint
     PATCH /drinks/<id>
@@ -97,6 +99,44 @@ def add_drinks():
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
+
+
+@app.route('/drinks<int:drink_id>', methods=['PATCH'])
+@requires_auth('patch:drinks')
+def update_drink(drink_id):
+    """
+    Responds with a 404 error if <drink_id> is not found
+    Updates the corresponding row for <drink_id>
+    Requires the 'patch:drinks' permission
+    Contains the drink.long() data representation in response
+    :param drink_id: Integer for id of drink
+    :return: Status code 200 and JSON {"success": True, "drinks": drink}, where drink an array containing only
+    the updated drink or appropriate status code indicating reason for failure
+    """
+    data = request.get_json()
+    if not all(key in data.keys() for key in ("id", "title", "recipe")):
+        abort(422)
+    drink = Drink.query.get(id=drink_id)
+    if not drink:
+        abort(404)
+    error = False
+    try:
+        drink.title = data["title"]
+        drink.recipe = data["recipe"]
+        drink.update()
+    except Exception:
+        error = True
+        db.session.rollback()
+        print(exc.info())
+    finally:
+        db.session.close()
+        if error:
+            abort(500)
+        else:
+            return jsonify({
+                "success": True,
+                "drinks": drink.long()
+            })
 
 '''
 @TODO implement endpoint
