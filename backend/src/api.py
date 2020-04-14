@@ -4,7 +4,7 @@ from sqlalchemy import exc
 import json
 from flask_cors import CORS
 
-from .database.models import db_drop_and_create_all, setup_db, Drink
+from .database.models import db, db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
 
 app = Flask(__name__)
@@ -51,15 +51,40 @@ def get_drinks_detail():
     })
 
 
-'''
-@TODO implement endpoint
-    POST /drinks
-        it should create a new row in the drinks table
-        it should require the 'post:drinks' permission
-        it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
-        or appropriate status code indicating reason for failure
-'''
+@app.route('/drinks', methods=['POST'])
+@requires_auth('post:drinks')
+def add_drinks():
+    """
+    Requires post:drinks permissions. Creates a new row in the drinks table.
+    Response contains the drink.long() data representation
+    :return: Status code 200 and json {"success": True, "drinks": drink} where drink an array containing
+    only the newly created drink or appropriate status code indicating reason for failure
+    """
+    data = dict(request.get_json())
+    if not all(key in data.keys() for key in ("id", "title", "recipe")):
+        abort(422)
+    error = False
+    try:
+        drink = Drink(
+            id=data["id"],
+            title=data["title"],
+            recipe=data["recipe"],
+        )
+        drink.insert()
+    except Exception:
+        error = True
+        db.session.rollback()
+        print(exc.info())
+    finally:
+        db.session.close()
+        if error:
+            abort(500)
+        else:
+            result = {
+                "success": True,
+                "drinks": drink.long()
+            }
+            return jsonify(result)
 
 '''
 @TODO implement endpoint
