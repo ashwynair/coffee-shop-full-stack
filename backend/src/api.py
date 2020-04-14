@@ -138,18 +138,40 @@ def update_drink(drink_id):
                 "drinks": drink.long()
             })
 
-'''
-@TODO implement endpoint
-    DELETE /drinks/<id>
-        where <id> is the existing model id
-        it should respond with a 404 error if <id> is not found
-        it should delete the corresponding row for <id>
-        it should require the 'delete:drinks' permission
-    returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
-        or appropriate status code indicating reason for failure
-'''
 
-## Error Handling
+@app.route('/drinks<int:drink_id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
+def delete_drink(drink_id):
+    """
+    Responds with a 404 error if <drink_id> is not found
+    Deletes the corresponding row for <drink_id>
+    Requires the 'delete:drinks' permission
+    :param drink_id: Integer for id of drink
+    :return: Status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
+    or appropriate status code indicating reason for failure
+    """
+    drink = Drink.query.get(id=drink_id)
+    if not drink:
+        abort(404)
+    error = False
+    try:
+        drink.delete()
+    except Exception:
+        error = True
+        db.session.rollback()
+        print(exc.info())
+    finally:
+        db.session.close()
+        if error:
+            abort(500)
+        else:
+            return jsonify({
+                "success": True,
+                "delete": drink_id
+            })
+
+
+# Error Handling
 '''
 Example error handling for unprocessable entity
 '''
