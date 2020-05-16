@@ -1,8 +1,8 @@
 import os
 from flask import Flask, request, jsonify, abort
-from sqlalchemy import exc
 import json
 from flask_cors import CORS
+from sys import exc_info
 
 from .database.models import db, db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
@@ -18,13 +18,13 @@ CORS(app)
 '''
 
 
-# db_drop_and_create_all()
+db_drop_and_create_all()
 
 
 # ROUTES
 
 @app.route('/drinks', methods=['GET'])
-def get_drinks():
+def get_drinks(*args, **kwargs):
     """
     Public endpoint. Contains only the drink.short() data representation
     :return: Status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
@@ -39,7 +39,7 @@ def get_drinks():
 
 @app.route('/drinks-detail', methods=['GET'])
 @requires_auth('get:drinks-detail')
-def get_drinks_detail():
+def get_drinks_detail(*args, **kwargs):
     """
     Requires get:drinks-detail permissions. Contains the drink.long() data representation
     :return: status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
@@ -54,7 +54,7 @@ def get_drinks_detail():
 
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
-def add_drinks():
+def add_drinks(*args, **kwargs):
     """
     Requires post:drinks permissions. Creates a new row in the drinks table.
     Response contains the drink.long() data representation
@@ -62,35 +62,36 @@ def add_drinks():
     only the newly created drink or appropriate status code indicating reason for failure
     """
     data = dict(request.get_json())
-    if not all(key in data.keys() for key in ("id", "title", "recipe")):
+    if not all(key in data.keys() for key in ("title", "recipe")):
         abort(422)
     error = False
     try:
-        drink = Drink(
-            id=data["id"],
+        recipe = data.get("recipe")
+        if not isinstance(recipe, list):
+            recipe = [recipe]
+        new_drink = Drink(
             title=data["title"],
-            recipe=data["recipe"],
+            recipe=json.dumps(recipe)
         )
-        drink.insert()
+        new_drink.insert()
+        result = {
+            "success": True,
+            "drinks": new_drink.long()
+        }
+        return jsonify(result)
     except Exception:
         error = True
         db.session.rollback()
-        print(exc.info())
+        print(exc_info())
     finally:
         db.session.close()
         if error:
             abort(500)
-        else:
-            result = {
-                "success": True,
-                "drinks": drink.long()
-            }
-            return jsonify(result)
 
 
 @app.route('/drinks<int:drink_id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
-def update_drink(drink_id):
+def update_drink(drink_id, *args, **kwargs):
     """
     Responds with a 404 error if <drink_id> is not found
     Updates the corresponding row for <drink_id>
@@ -109,12 +110,12 @@ def update_drink(drink_id):
     error = False
     try:
         drink.title = data["title"]
-        drink.recipe = data["recipe"]
+        drink.recipe = json.dumps(data["recipe"])
         drink.update()
     except Exception:
         error = True
         db.session.rollback()
-        print(exc.info())
+        print(exc_info())
     finally:
         db.session.close()
         if error:
@@ -128,7 +129,7 @@ def update_drink(drink_id):
 
 @app.route('/drinks<int:drink_id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drink(drink_id):
+def delete_drink(drink_id, *args, **kwargs):
     """
     Responds with a 404 error if <drink_id> is not found
     Deletes the corresponding row for <drink_id>
@@ -146,7 +147,7 @@ def delete_drink(drink_id):
     except Exception:
         error = True
         db.session.rollback()
-        print(exc.info())
+        print(exc_info())
     finally:
         db.session.close()
         if error:
