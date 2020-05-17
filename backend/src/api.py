@@ -149,7 +149,7 @@ def delete_drink(*args, **kwargs):
     drink_id = kwargs.get("drink_id", None)
     if not drink_id:
         abort(400)
-    drink = Drink.query.get(id=drink_id)
+    drink = Drink.query.get(drink_id)
     if not drink:
         abort(404)
     error = False
