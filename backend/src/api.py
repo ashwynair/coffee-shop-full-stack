@@ -106,18 +106,19 @@ def update_drink(*args, **kwargs):
     if not drink_id:
         abort(400)
     data = dict(request.get_json())
-    if not all(key in data.keys() for key in ("id", "title", "recipe")):
-        abort(422)
+    title = data.get("title", None)
+    recipe = data.get("recipe", None)
     drink = Drink.query.get(drink_id)
     if not drink:
         abort(404)
     error = False
     try:
-        drink.title = data["title"]
-        recipe = data.get("recipe")
-        if not isinstance(recipe, list):
-            recipe = [recipe]
-        drink.recipe = json.dumps(recipe)
+        if title:
+            drink.title = title
+        if recipe:
+            if not isinstance(recipe, list):
+                recipe = [recipe]
+            drink.recipe = json.dumps(recipe)
         drink.update()
         return jsonify({
             "success": True,
