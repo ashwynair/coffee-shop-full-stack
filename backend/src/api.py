@@ -133,23 +133,31 @@ def update_drink(*args, **kwargs):
             abort(500)
 
 
-@app.route('/drinks<int:drink_id>', methods=['DELETE'])
+@app.route('/drinks/<int:drink_id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drink(drink_id, *args, **kwargs):
+def delete_drink(*args, **kwargs):
     """
-    Responds with a 404 error if <drink_id> is not found
+    Responds with a 400 error if <drink_id> is not provided by client
+    Responds with a 404 error if drink corresponding <drink_id> is not found
     Deletes the corresponding row for <drink_id>
     Requires the 'delete:drinks' permission
     :param drink_id: Integer for id of drink
     :return: Status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
     or appropriate status code indicating reason for failure
     """
+    drink_id = kwargs.get("drink_id", None)
+    if not drink_id:
+        abort(400)
     drink = Drink.query.get(id=drink_id)
     if not drink:
         abort(404)
     error = False
     try:
         drink.delete()
+        return jsonify({
+            "success": True,
+            "delete": drink_id
+        })
     except Exception:
         error = True
         db.session.rollback()
@@ -158,11 +166,6 @@ def delete_drink(drink_id, *args, **kwargs):
         db.session.close()
         if error:
             abort(500)
-        else:
-            return jsonify({
-                "success": True,
-                "delete": drink_id
-            })
 
 
 # Error Handling
