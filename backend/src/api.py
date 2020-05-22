@@ -122,7 +122,7 @@ def update_drink(*args, **kwargs):
         drink.update()
         return jsonify({
             "success": True,
-            "drinks": drink.long()
+            "drinks": [drink.long()]
         })
     except Exception:
         error = True
